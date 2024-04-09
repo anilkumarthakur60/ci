@@ -1,3 +1,7 @@
+
+import { Config } from 'ziggy-js';
+
+
 export interface User {
     id: number;
     name: string;
