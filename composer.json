@@ -6,6 +6,9 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "anil/fast-api-crud": "^2.0",
+        "cviebrock/eloquent-sluggable": "^11.0",
+        "cviebrock/eloquent-taggable": "^11.0",
         "inertiajs/inertia-laravel": "^1.0",
         "laravel/framework": "^11.0",
         "laravel/jetstream": "^5.0",
