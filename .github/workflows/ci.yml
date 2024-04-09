@@ -22,13 +22,13 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-
-      - uses: actions/checkout@v4
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
       - name: Install Dependencies
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
@@ -39,6 +39,6 @@ jobs:
           php artisan config:cache
           chmod -R 777 storage bootstrap/cache
           cp .env.example .env
+          ./vendor/bin/pest
 
-      - name: Directory Permissions
-        run: chmod -R 777 storage bootstrap/cache
+
