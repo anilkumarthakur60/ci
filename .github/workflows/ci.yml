@@ -1,4 +1,4 @@
-name: Laravel
+name: Laravel CI
 
 on:
   push:
@@ -14,7 +14,6 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_USER: root
           MYSQL_ROOT_PASSWORD: admin
           MYSQL_DATABASE: ci_test
         ports:
@@ -28,35 +27,59 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          php-version: 8.3
           coverage: none
-      - name: Set up Node
-        uses: actions/setup-node@v4
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
         with:
-          node-version: '20.x'
+          path: |
+            ~/.composer/cache/files
+            ~/.cache/composer/files
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Create .env file
+        run: cp .env.example .env
+
+      - name: Key Generate
+        run: php artisan key:generate
+
+      - name: Migration
+        run: php artisan migrate
+
+      - name: Optimize
+        run: php artisan optimize:clear
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1.2.1
 
       - name: npm install
-        run: |
-          npm --version
-          npm install
-          npm run build
+        run: bun install
 
-      - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      - name: npm run build
+        run: bun run build
 
-      - name: setup laravel
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-          php artisan config:cache
-          chmod -R 777 storage bootstrap/cache
-          php artisan migrate
-          ./vendor/bin/pest
-
+      - name: Run php pest tests
+        run: vendor/bin/pest
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: ci_test
+          DB_USERNAME: root
+          DB_PASSWORD: admin
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: laravel-failure-artifact
           path: storage/logs/laravel.log
+
+      - name: cat laravel.log
+        if: failure()
+        run: cat storage/logs/laravel.log
